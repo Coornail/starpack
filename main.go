@@ -26,15 +26,16 @@ const (
 )
 
 var (
-	supersample  bool
-	verbose      bool
-	fast         bool
-	whiteBalance bool
-	denoise      bool
-	parallelism  int
-	mergeMethod  string
-	samplerName  string
-	outputFile   string
+	supersample          bool
+	verbose              bool
+	fast                 bool
+	whiteBalance         bool
+	denoise              bool
+	removeLightPollution bool
+	parallelism          int
+	mergeMethod          string
+	samplerName          string
+	outputFile           string
 )
 
 func main() {
@@ -47,6 +48,7 @@ func main() {
 	flag.BoolVar(&fast, "fast", true, "Process images faster, trading quality")
 	flag.BoolVar(&whiteBalance, "whiteBalance", false, "White balancing")
 	flag.BoolVar(&denoise, "denoise", false, "Denoise input images")
+	flag.BoolVar(&removeLightPollution, "removeLightPollution", true, "Remove light pollution")
 	flag.IntVar(&parallelism, "parallelism", runtime.NumCPU()*2, "Number of threads to process images")
 	flag.StringVar(&mergeMethod, "mergeMethod", "average", "Method to merge pixels from the input images (median, average, brightest)")
 	flag.StringVar(&samplerName, "sampler", "combined", "Sample images for motion detection (gauss, uniform, edge)")
@@ -84,16 +86,32 @@ func main() {
 	verboseOutput("Loading images\n")
 	loadedImages := loadImages(images)
 
-	verboseOutput("Removing light pollution\n")
-	for i := range loadedImages {
-		loadedImages[i] = removeLightPollution(loadedImages[i])
-	}
+	var wg sync.WaitGroup
 
 	if denoise {
 		verboseOutput("Denoising\n")
 		for i := range loadedImages {
-			loadedImages[i] = denoiseImage(loadedImages[i])
+			wg.Add(1)
+			go func(i int) {
+				loadedImages[i] = denoiseImage(loadedImages[i])
+				wg.Done()
+			}(i)
 		}
+		wg.Wait()
+	}
+
+	if removeLightPollution {
+		verboseOutput("Removing light pollution\n")
+		mask := EstimateLightPollutionMask(loadedImages[0])
+		for i := range loadedImages {
+			wg.Add(1)
+			go func(i int) {
+				loadedImages[i] = removeLightPollutionImage(loadedImages[i], mask)
+				wg.Done()
+			}(i)
+		}
+
+		wg.Wait()
 	}
 
 	if supersample {
@@ -155,11 +173,10 @@ func starpack(images []image.Image, colorMergeMethod ColorMerge) *image.NRGBA64 
 	return output
 }
 
-func removeLightPollution(img image.Image) image.Image {
+func removeLightPollutionImage(img, mask image.Image) image.Image {
 	bounds := img.Bounds()
 	output := image.NewNRGBA64(bounds)
 
-	mask := EstimateLightPollutionMask(img)
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			currColor := rgbaToColorful(img.At(x, y))
@@ -235,10 +252,11 @@ func denoiseImage(img image.Image) image.Image {
 
 func getNeighborAverageColor(img image.Image, x, y int) color.Color {
 	colors := make([]colorful.Color, 0)
+	bounds := img.Bounds()
 
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
-			if outOfBounds(img, x+i, y+j) || (i == 0 && j == 0) {
+			if outOfBounds(x+i, y+j, bounds) || (i == 0 && j == 0) {
 				continue
 			}
 			colors = append(colors, rgbaToColorful(img.At(x+i, y+j)))
@@ -248,8 +266,8 @@ func getNeighborAverageColor(img image.Image, x, y int) color.Color {
 	return averageColor(colors)
 }
 
-func outOfBounds(img image.Image, x, y int) bool {
-	return x < img.Bounds().Min.X || x > img.Bounds().Max.X || y < img.Bounds().Min.Y || y > img.Bounds().Max.Y
+func outOfBounds(x, y int, bounds image.Rectangle) bool {
+	return x < bounds.Min.X || x > bounds.Max.X || y < bounds.Min.Y || y > bounds.Max.Y
 }
 
 func upscale(images []image.Image) []image.Image {
