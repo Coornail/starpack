@@ -84,6 +84,18 @@ func main() {
 	verboseOutput("Loading images\n")
 	loadedImages := loadImages(images)
 
+	verboseOutput("Removing light pollution\n")
+	for i := range loadedImages {
+		loadedImages[i] = removeLightPollution(loadedImages[i])
+	}
+
+	if denoise {
+		verboseOutput("Denoising\n")
+		for i := range loadedImages {
+			loadedImages[i] = denoiseImage(loadedImages[i])
+		}
+	}
+
 	if supersample {
 		verboseOutput("Upscaling\n")
 		loadedImages = upscale(loadedImages)
@@ -143,6 +155,25 @@ func starpack(images []image.Image, colorMergeMethod ColorMerge) *image.NRGBA64 
 	return output
 }
 
+func removeLightPollution(img image.Image) image.Image {
+	bounds := img.Bounds()
+	output := image.NewNRGBA64(bounds)
+
+	mask := EstimateLightPollutionMask(img)
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			currColor := rgbaToColorful(img.At(x, y))
+			maskColor := rgbaToColorful(mask.At(x, y))
+
+			currH, currS, currV := currColor.Hsv()
+			maskH, maskS, maskV := maskColor.Hsv()
+			output.Set(x, y, colorful.Hsv(currH-maskH, currS-maskS, currV-maskV).Clamped())
+		}
+	}
+
+	return output
+}
+
 func verboseOutput(format string, args ...interface{}) {
 	if verbose {
 		fmt.Printf(format, args...)
@@ -173,13 +204,7 @@ func loadImages(images []string) []image.Image {
 				err = errors.Wrapf(err, "for image: %s", currImg.Name())
 				panic(err)
 			}
-
-			// @todo lift me up one level
-			if denoise {
-				loadedImages[i] = denoiseImage(decoded)
-			} else {
-				loadedImages[i] = decoded
-			}
+			loadedImages[i] = decoded
 		}(i)
 	}
 
