@@ -28,16 +28,15 @@ const (
 )
 
 var (
-	supersample             bool
-	verbose                 bool
-	fast                    bool
-	motionCorrectionEnabled bool
-	whiteBalance            bool
-	denoise                 bool
-	parallelism             int
-	mergeMethod             string
-	samplerName             string
-	outputFile              string
+	supersample  bool
+	verbose      bool
+	fast         bool
+	whiteBalance bool
+	denoise      bool
+	parallelism  int
+	mergeMethod  string
+	samplerName  string
+	outputFile   string
 )
 
 func main() {
@@ -48,7 +47,6 @@ func main() {
 	flag.BoolVar(&supersample, "supersample", true, "Supersample image")
 	flag.BoolVar(&verbose, "verbose", true, "Verbose output")
 	flag.BoolVar(&fast, "fast", true, "Process images faster, trading quality")
-	flag.BoolVar(&motionCorrectionEnabled, "motionCorrection", true, "Motion correction")
 	flag.BoolVar(&whiteBalance, "whiteBalance", false, "White balancing")
 	flag.BoolVar(&denoise, "denoise", false, "Denoise input images")
 	flag.IntVar(&parallelism, "parallelism", runtime.NumCPU()*2, "Number of threads to process images")
@@ -93,21 +91,6 @@ func main() {
 		loadedImages = upscale(loadedImages)
 	}
 
-	var motionCorrection []Motion
-	if motionCorrectionEnabled {
-		verboseOutput("Motion correcting\n")
-		motionCorrection = getMotionCorrection(images, loadedImages)
-
-		outliers := getOutliers(motionCorrection)
-		for i := len(outliers) - 1; i >= 0; i-- {
-			index := outliers[i]
-			verboseOutput("Pulling %s, because it's too different (Diff: %.4f)\n", images[index], motionCorrection[index].Diff*100)
-			images = images[:index+copy(images[index:], images[index+1:])]
-			loadedImages = loadedImages[:index+copy(loadedImages[index:], loadedImages[index+1:])]
-			motionCorrection = motionCorrection[:index+copy(motionCorrection[index:], motionCorrection[index+1:])]
-		}
-	}
-
 	var colorMergeMethod ColorMerge = medianColor
 	if mergeMethod == "average" {
 		colorMergeMethod = averageColor
@@ -115,7 +98,7 @@ func main() {
 		colorMergeMethod = brightestColor
 	}
 
-	output := superres(loadedImages, motionCorrection, colorMergeMethod)
+	output := superres(loadedImages, colorMergeMethod)
 
 	if whiteBalance {
 		verboseOutput("White balancing\n")
@@ -128,7 +111,7 @@ func main() {
 	tiff.Encode(f, output, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 }
 
-func superres(images []image.Image, motionCorrection []Motion, colorMergeMethod ColorMerge) *image.NRGBA64 {
+func superres(images []image.Image, colorMergeMethod ColorMerge) *image.NRGBA64 {
 	bounds := images[0].Bounds()
 	output := image.NewNRGBA64(bounds)
 
@@ -143,10 +126,6 @@ func superres(images []image.Image, motionCorrection []Motion, colorMergeMethod 
 				for i := range images {
 					currX := x
 					currY := y
-					if motionCorrectionEnabled {
-						currX += motionCorrection[i].X
-						currY += motionCorrection[i].Y
-					}
 					if currX < bounds.Min.X || currX >= bounds.Max.X ||
 						currY < bounds.Min.Y || currY >= bounds.Max.Y {
 						continue
@@ -171,57 +150,6 @@ func verboseOutput(format string, args ...interface{}) {
 		fmt.Printf(format, args...)
 
 	}
-}
-
-func getMotionCorrection(imageNames []string, imgs []image.Image) []Motion {
-	motionCorrection := make([]Motion, len(imgs))
-
-	motionCache := make(MotionCache, len(imgs))
-	motionCache.ReadFromFile(motionCachePath)
-
-	fmt.Printf("Reference %s:\t 0 0\n", imageNames[0])
-
-	type jobResult struct {
-		i      int
-		motion Motion
-	}
-
-	motionWorker := func(jobs chan int, ch chan jobResult) {
-		for i := range jobs {
-			if motion, found := motionCache[imageNames[i]]; found {
-				motionCorrection[i] = motion
-				verboseOutput("Cached motion: %s\t x:%d y:%d \t Diff: %f\n", imageNames[i], motion.X, motion.Y, motion.Diff)
-				ch <- jobResult{i: i, motion: motion}
-			} else {
-				motion := estimateMotion(imgs[0], imgs[i])
-				motionCorrection[i] = motion
-				motionCache[imageNames[i]] = motion
-				verboseOutput("Motion calculated: %s\t x:%d y:%d \t Diff: %.4f%%\n", imageNames[i], motionCorrection[i].X, motionCorrection[i].Y, motion.Diff*100)
-				ch <- jobResult{i: i, motion: motion}
-			}
-		}
-	}
-
-	jobQueue := make(chan int, len(imgs))
-	resultQueue := make(chan jobResult, len(imgs))
-
-	for w := 0; w < parallelism; w++ {
-		go motionWorker(jobQueue, resultQueue)
-	}
-
-	for i := 1; i < len(imageNames); i++ {
-		jobQueue <- i
-	}
-	close(jobQueue)
-
-	for i := 1; i < len(imageNames); i++ {
-		result := <-resultQueue
-		motionCorrection[result.i] = result.motion
-	}
-
-	//motionCache.WriteToFile(motionCachePath)
-
-	return motionCorrection
 }
 
 func loadImages(images []string) []image.Image {
