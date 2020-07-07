@@ -22,8 +22,6 @@ import (
 )
 
 const (
-	motionCachePath = "/tmp/motion.json"
-
 	delta = 0.1
 )
 
@@ -98,7 +96,7 @@ func main() {
 		colorMergeMethod = brightestColor
 	}
 
-	output := superres(loadedImages, colorMergeMethod)
+	output := starpack(loadedImages, colorMergeMethod)
 
 	if whiteBalance {
 		verboseOutput("White balancing\n")
@@ -111,7 +109,7 @@ func main() {
 	tiff.Encode(f, output, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 }
 
-func superres(images []image.Image, colorMergeMethod ColorMerge) *image.NRGBA64 {
+func starpack(images []image.Image, colorMergeMethod ColorMerge) *image.NRGBA64 {
 	bounds := images[0].Bounds()
 	output := image.NewNRGBA64(bounds)
 
