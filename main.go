@@ -28,13 +28,11 @@ const (
 var (
 	supersample          bool
 	verbose              bool
-	fast                 bool
 	whiteBalance         bool
 	denoise              bool
 	removeLightPollution bool
 	parallelism          int
 	mergeMethod          string
-	samplerName          string
 	outputFile           string
 )
 
@@ -43,15 +41,13 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	flag.BoolVar(&supersample, "supersample", true, "Supersample image")
+	flag.BoolVar(&supersample, "supersample", false, "Supersample image")
 	flag.BoolVar(&verbose, "verbose", true, "Verbose output")
-	flag.BoolVar(&fast, "fast", true, "Process images faster, trading quality")
 	flag.BoolVar(&whiteBalance, "whiteBalance", false, "White balancing")
 	flag.BoolVar(&denoise, "denoise", false, "Denoise input images")
 	flag.BoolVar(&removeLightPollution, "removeLightPollution", true, "Remove light pollution")
 	flag.IntVar(&parallelism, "parallelism", runtime.NumCPU()*2, "Number of threads to process images")
 	flag.StringVar(&mergeMethod, "mergeMethod", "average", "Method to merge pixels from the input images (median, average, brightest)")
-	flag.StringVar(&samplerName, "sampler", "combined", "Sample images for motion detection (gauss, uniform, edge)")
 	flag.StringVar(&outputFile, "output", "output.tif", "Output file name")
 	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 	flag.Parse()
@@ -69,10 +65,6 @@ func main() {
 	}
 
 	images := flag.Args()
-	if fast {
-		samplerName = "gauss"
-		supersample = false
-	}
 
 	flag.VisitAll(func(f *flag.Flag) {
 		verboseOutput("%s:\t%v\n", f.Name, f.Value)
