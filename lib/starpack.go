@@ -9,6 +9,7 @@ import (
 	"os"
 	"sync"
 
+	"golang.org/x/image/tiff"
 	"github.com/disintegration/imaging"
 	colorful "github.com/lucasb-eyer/go-colorful"
 	"github.com/pkg/errors"
@@ -156,4 +157,11 @@ func Upscale(images []image.Image) []image.Image {
 	}
 
 	return images
+}
+
+func SaveImage(fileName string, image image.Image) error {
+	f, _ := os.Create(fileName)
+	defer f.Close()
+
+	return tiff.Encode(f, image, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 }

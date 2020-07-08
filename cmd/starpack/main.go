@@ -11,7 +11,6 @@ import (
 
 	"github.com/Coornail/starpack/colr"
 	starpack "github.com/Coornail/starpack/lib"
-	"golang.org/x/image/tiff"
 )
 
 var (
@@ -120,7 +119,5 @@ func main() {
 	}
 
 	verboseOutput("Writing output\n")
-	f, _ := os.Create(outputFile)
-	defer f.Close()
-	tiff.Encode(f, output, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
+	starpack.SaveImage(outputFile, output)
 }
