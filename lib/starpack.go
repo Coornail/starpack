@@ -5,14 +5,16 @@ import (
 	"image"
 	"image/color"
 	_ "image/jpeg"
+	"log"
 	_ "net/http/pprof"
 	"os"
+	"path/filepath"
 	"sync"
 
-	"golang.org/x/image/tiff"
 	"github.com/disintegration/imaging"
 	colorful "github.com/lucasb-eyer/go-colorful"
 	"github.com/pkg/errors"
+	"golang.org/x/image/tiff"
 )
 
 const (
@@ -72,6 +74,12 @@ func RemoveLightPollutionImage(img, mask image.Image) image.Image {
 }
 
 func LoadImages(images []string) []image.Image {
+	var files []string
+	for _, file := range images {
+		files = append(files, collectFiles(file)...)
+	}
+	images = files
+
 	loadedImages := make([]image.Image, len(images))
 
 	var wg sync.WaitGroup
@@ -79,6 +87,7 @@ func LoadImages(images []string) []image.Image {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
+
 			loadedImages[i] = LoadImage(images[i])
 		}(i)
 	}
@@ -88,20 +97,44 @@ func LoadImages(images []string) []image.Image {
 	return loadedImages
 }
 
+func fileVisit(files *[]string) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Fatal(err)
+		}
+		ext := filepath.Ext(info.Name())
+		if !info.IsDir() && (ext == ".jpg" || ext == ".jpeg" || ext == ".tif" || ext == ".tiff" || ext == ".png") {
+			*files = append(*files, path)
+		}
+
+		return nil
+	}
+}
+
+func collectFiles(file string) []string {
+	var files []string
+	filepath.Walk(file, fileVisit(&files))
+
+	return files
+}
+
 func LoadImage(filename string) image.Image {
 	var currImg *os.File
 	var err error
 
-	if currImg, err = os.Open(filename); err != nil {
-		err = errors.Wrapf(err, "for image: %s", currImg.Name())
+	handleError := func(err error) {
+		err = errors.Wrapf(err, "for image: %s", filename)
 		panic(err)
+	}
+
+	if currImg, err = os.Open(filename); err != nil {
+		handleError(err)
 	}
 	defer currImg.Close()
 
 	decoded, _, err := image.Decode(currImg)
 	if err != nil {
-		err = errors.Wrapf(err, "for image: %s", currImg.Name())
-		panic(err)
+		handleError(err)
 	}
 
 	return decoded

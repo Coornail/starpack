@@ -26,18 +26,13 @@ var (
 func verboseOutput(format string, args ...interface{}) {
 	if verbose {
 		fmt.Printf(format, args...)
-
 	}
 }
 
 func main() {
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
-
 	flag.BoolVar(&supersample, "supersample", false, "Supersample image")
 	flag.BoolVar(&verbose, "verbose", true, "Verbose output")
-	flag.BoolVar(&whiteBalance, "whiteBalance", false, "White balancing")
+	flag.BoolVar(&whiteBalance, "whiteBalance", false, "White balancing") // @probabaly not worth it
 	flag.BoolVar(&denoise, "denoise", false, "Denoise input images")
 	flag.BoolVar(&removeLightPollution, "removeLightPollution", true, "Remove light pollution")
 	flag.StringVar(&mergeMethod, "mergeMethod", "average", "Method to merge pixels from the input images (median, average, brightest)")
@@ -46,6 +41,10 @@ func main() {
 	flag.Parse()
 
 	if *cpuprofile != "" {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
@@ -56,13 +55,11 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 	}
-
-	images := flag.Args()
-
 	flag.VisitAll(func(f *flag.Flag) {
 		verboseOutput("%s:\t%v\n", f.Name, f.Value)
 	})
 
+	images := flag.Args()
 	if len(flag.Args()) == 0 {
 		flag.Usage()
 		os.Exit(1)
@@ -70,6 +67,7 @@ func main() {
 
 	verboseOutput("Loading images\n")
 	loadedImages := starpack.LoadImages(images)
+	verboseOutput("Loaded %d images\n", len(loadedImages))
 
 	var wg sync.WaitGroup
 
