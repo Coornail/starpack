@@ -47,9 +47,9 @@ func Starpack(images []image.Image, colorMergeMethod ColorMerge) *image.NRGBA64 
 				output.Set(x, y, colorMergeMethod(currentColor))
 			}(x, y, currentColor)
 		}
+		wg.Wait()
 		fmt.Printf("Merging: %.2f%%\r", float64(y)/float64(bounds.Max.Y)*100.0)
 	}
-	wg.Wait()
 	fmt.Printf("\n")
 
 	return output
