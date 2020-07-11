@@ -55,9 +55,8 @@ func Starpack(images []image.Image, colorMergeMethod ColorMerge) *image.NRGBA64 
 	return output
 }
 
-func RemoveLightPollutionImage(img, mask image.Image) image.Image {
+func RemoveLightPollutionImage(img *image.Image, mask image.Image) {
 	bounds := img.Bounds()
-	output := image.NewNRGBA64(bounds)
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
@@ -66,7 +65,7 @@ func RemoveLightPollutionImage(img, mask image.Image) image.Image {
 
 			currH, currS, currV := currColor.Hsv()
 			maskH, maskS, maskV := maskColor.Hsv()
-			output.Set(x, y, colorful.Hsv(currH-maskH, currS-maskS, currV-maskV).Clamped())
+			img.Set(x, y, colorful.Hsv(currH-maskH, currS-maskS, currV-maskV).Clamped())
 		}
 	}
 
