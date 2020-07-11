@@ -1,24 +1,24 @@
 package starmap
 
 import (
-	"image"
 	"math"
 )
 
 type Star struct {
-	Point image.Point
-	Size  float64
+	X    float64
+	Y    float64
+	Size float64
 }
 
-func (s Star) IntersectWith(x, y int) bool {
-	xDist := math.Abs(float64(s.Point.X) - float64(x))
-	yDist := math.Abs(float64(s.Point.Y) - float64(y))
+func (s Star) IntersectWith(x, y float64) bool {
+	xDist := math.Abs(s.X - x)
+	yDist := math.Abs(s.Y - y)
 
 	return math.Sqrt(xDist*xDist+yDist*yDist)-s.Size < 0
 }
 
 func (s Star) GetOverlap(s2 Star) float64 {
-	if s.Point.X == s2.Point.X && s.Point.Y == s2.Point.Y {
+	if s.X == s2.X && s.Y == s2.Y {
 		return 1.0
 	}
 	return 0.0

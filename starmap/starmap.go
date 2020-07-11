@@ -24,7 +24,7 @@ func (sm Starmap) ToImage() *image.NRGBA64 {
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			c := color.RGBA{R: 255, G: 255, B: 255, A: 255}
-			if sm.IntersectWithStar(x, y) {
+			if sm.IntersectWithStar(float64(x), float64(y)) {
 				c = color.RGBA{R: 0, G: 0, B: 0, A: 255}
 			}
 			img.Set(x, y, c)
@@ -34,7 +34,7 @@ func (sm Starmap) ToImage() *image.NRGBA64 {
 	return img
 }
 
-func (sm Starmap) IntersectWithStar(x, y int) bool {
+func (sm Starmap) IntersectWithStar(x, y float64) bool {
 	for i := range sm.Stars {
 		if sm.Stars[i].IntersectWith(x, y) {
 			return true
@@ -62,10 +62,10 @@ func (sm Starmap) GetOverlap(sm2 Starmap) float64 {
 	return overlap / float64(len(sm.Stars))
 }
 
-func (sm Starmap) Offset(x, y int) Starmap {
+func (sm Starmap) Offset(x, y float64) Starmap {
 	for i := range sm.Stars {
-		sm.Stars[i].Point.X += x
-		sm.Stars[i].Point.Y += y
+		sm.Stars[i].X += x
+		sm.Stars[i].Y += y
 	}
 
 	return sm
@@ -73,26 +73,23 @@ func (sm Starmap) Offset(x, y int) Starmap {
 
 func (sm Starmap) Rotate(deg float64) Starmap {
 	/*
-	   angle = (angle ) * (Math.PI/180); // Convert to radians
-
-	   var rotatedX = Math.cos(angle) * (point.x - center.x) - Math.sin(angle) * (point.y-center.y) + center.x;
-
-	   var rotatedY = Math.sin(angle) * (point.x - center.x) + Math.cos(angle) * (point.y - center.y) + center.y;
+			angle = (angle ) * (Math.PI/180); // Convert to radians
+		var rotatedX = Math.cos(angle) * (point.x - center.x) - Math.sin(angle) * (point.y-center.y) + center.x;
+		var rotatedY = Math.sin(angle) * (point.x - center.x) + Math.cos(angle) * (point.y - center.y) + center.y;
 	*/
-
 	angle := float64(deg) * math.Pi / 180.0
 	cosAngle := math.Cos(angle)
 	sinAngle := math.Sin(angle)
 
-	centerX := float64(sm.Bounds.Max.X) / 2
-	centerY := float64(sm.Bounds.Max.Y) / 2
+	centerX := float64(sm.Bounds.Max.X) / 2.0
+	centerY := float64(sm.Bounds.Max.Y) / 2.0
 
 	for i := range sm.Stars {
 		// Rotate by the center of the image.
-		x := float64(sm.Stars[i].Point.X)
-		y := float64(sm.Stars[i].Point.Y)
-		sm.Stars[i].Point.X = (int)(math.Round(cosAngle*(x-centerX) - sinAngle*(y-centerY) + centerX))
-		sm.Stars[i].Point.Y = (int)(math.Round(sinAngle*(x-centerX) + cosAngle*(y-centerY) + centerY))
+		x := float64(sm.Stars[i].X)
+		y := float64(sm.Stars[i].Y)
+		sm.Stars[i].X = cosAngle*(x-centerX) - sinAngle*(y-centerY) + centerX
+		sm.Stars[i].Y = sinAngle*(x-centerX) + cosAngle*(y-centerY) + centerY
 	}
 
 	return sm

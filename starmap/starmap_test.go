@@ -9,10 +9,8 @@ func TestFullOverlap(t *testing.T) {
 	sm := Starmap{
 		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 1024, Y: 768}},
 		Stars: []Star{{
-			Point: image.Point{
-				X: 512,
-				Y: 368,
-			},
+			X:    512,
+			Y:    368,
 			Size: 25.0,
 		}},
 	}
@@ -27,17 +25,15 @@ func TestOffset(t *testing.T) {
 	sm1 := Starmap{
 		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 1024, Y: 768}},
 		Stars: []Star{{
-			Point: image.Point{
-				X: 512,
-				Y: 368,
-			},
+			X:    512,
+			Y:    368,
 			Size: 1.0,
 		}},
 	}
 
 	sm2 := sm1
-	sm1.Stars[0].Point.X = 511
-	sm1.Stars[0].Point.Y = 367
+	sm1.Stars[0].X = 511
+	sm1.Stars[0].Y = 367
 
 	sm2 = sm2.Offset(1, 1)
 	overlap := sm1.GetOverlap(sm2)
