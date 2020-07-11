@@ -89,7 +89,7 @@ func main() {
 		for i := range loadedImages {
 			wg.Add(1)
 			go func(i int) {
-				starpack.RemoveLightPollutionImage(loadedImages[i], mask)
+				loadedImages[i] = starpack.RemoveLightPollutionImage(loadedImages[i], mask)
 				wg.Done()
 			}(i)
 		}
