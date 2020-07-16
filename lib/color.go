@@ -30,9 +30,10 @@ func BrightestColor(colors []colorful.Color) colorful.Color {
 	brightestColor := 0
 
 	for i := range colors {
-		_, _, l := colors[i].Hcl()
-		if brightestValue < l {
+		_, _, v := colors[i].Hsv()
+		if brightestValue < v {
 			brightestColor = i
+			brightestValue = v
 		}
 	}
 
