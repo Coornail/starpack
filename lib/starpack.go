@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/Coornail/starpack/starmap"
 	"github.com/disintegration/imaging"
 	colorful "github.com/lucasb-eyer/go-colorful"
 	"github.com/pkg/errors"
@@ -197,4 +198,26 @@ func SaveImage(fileName string, image image.Image) error {
 	defer f.Close()
 
 	return tiff.Encode(f, image, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
+}
+
+func GetStarmap(img image.Image) starmap.Starmap {
+	// Filter for brightness.
+	bounds := img.Bounds()
+	var brightPoints []image.Point
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			_, _, v := rgbaToColorful(img.At(x, y)).Hsv()
+			if v > 0.5 {
+				brightPoints = append(brightPoints, image.Point{X: x, Y: y})
+			}
+		}
+	}
+
+	sm := starmap.Starmap { Bounds: bounds }
+	for i:= range brightPoints {
+		sm.Stars = append(sm.Stars, starmap.Star{X: float64(brightPoints[i].X), Y: float64(brightPoints[i].Y), Size: 1 })
+	}
+
+	return sm
 }

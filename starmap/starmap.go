@@ -72,11 +72,7 @@ func (sm Starmap) Offset(x, y float64) Starmap {
 }
 
 func (sm Starmap) Rotate(deg float64) Starmap {
-	/*
-			angle = (angle ) * (Math.PI/180); // Convert to radians
-		var rotatedX = Math.cos(angle) * (point.x - center.x) - Math.sin(angle) * (point.y-center.y) + center.x;
-		var rotatedY = Math.sin(angle) * (point.x - center.x) + Math.cos(angle) * (point.y - center.y) + center.y;
-	*/
+	// https://www.gamefromscratch.com/post/2012/11/24/GameDev-math-recipes-Rotating-one-point-around-another-point.aspx
 	angle := float64(deg) * math.Pi / 180.0
 	cosAngle := math.Cos(angle)
 	sinAngle := math.Sin(angle)
@@ -91,6 +87,36 @@ func (sm Starmap) Rotate(deg float64) Starmap {
 		sm.Stars[i].X = cosAngle*(x-centerX) - sinAngle*(y-centerY) + centerX
 		sm.Stars[i].Y = sinAngle*(x-centerX) + cosAngle*(y-centerY) + centerY
 	}
+
+	return sm
+}
+
+// Compresses several stars into appropriate bigger stars.
+func (sm Starmap) Compress() Starmap {
+
+	// Find neighboring stars and add them together.
+loop:
+	for i := range sm.Stars {
+		for j := range sm.Stars {
+			if i == j {
+				continue
+			}
+
+			if sm.Stars[i].IsNeighbor(sm.Stars[j]) {
+				if sm.Stars[i].GetOverlap(sm.Stars[j]) < 1 {
+					sm.Stars[i].Size++
+				}
+
+				// Delete j.
+				sm.Stars[j] = sm.Stars[len(sm.Stars)-1]
+				sm.Stars = sm.Stars[:len(sm.Stars)-1]
+				goto loop
+			}
+		}
+	}
+
+	// Remove stars under threshold.
+	// @todo
 
 	return sm
 }
