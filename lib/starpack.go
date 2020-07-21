@@ -216,9 +216,8 @@ func GetStarmap(img image.Image) starmap.Starmap {
 
 	sm := starmap.Starmap{Bounds: bounds}
 	for i := range brightPoints {
-		sm.Stars = append(sm.Stars, starmap.Star{X: float64(brightPoints[i].X), Y: float64(brightPoints[i].Y), Size: 1, Removed: false})
+		sm.Stars = append(sm.Stars, starmap.Star{X: float64(brightPoints[i].X), Y: float64(brightPoints[i].Y), Size: 1})
 	}
 
-	fmt.Printf("Compressing...\n")
 	return sm.Compress()
 }
