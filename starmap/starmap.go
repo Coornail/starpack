@@ -8,9 +8,54 @@ import (
 	"os"
 )
 
+const minimumStarSize = 1
+
+type Stars []Star
+
+// IsCloseTo checks if a star is neighbouring a cluster.
+func (stars Stars) IsCloseTo(s Star) bool {
+	for i := range stars {
+		if stars[i].IsNeighbor(s) {
+			return true
+		}
+	}
+	return false
+}
+
+func (stars Stars) Center() Star {
+	centerX := 0.0
+	centerY := 0.0
+
+	starLength := float64(len(stars))
+
+	for i := range stars {
+		centerX += stars[i].X
+		centerY += stars[i].Y
+	}
+
+	centerX /= starLength
+	centerY /= starLength
+
+	return Star{
+		X:    centerX,
+		Y:    centerY,
+		Size: math.Sqrt(starLength),
+	}
+}
+
 type Starmap struct {
 	Bounds image.Rectangle
-	Stars  []Star
+	Stars  Stars
+}
+
+func (sm Starmap) Copy() Starmap {
+	var stars []Star
+	copy(stars, sm.Stars)
+
+	return Starmap{
+		Bounds: sm.Bounds,
+		Stars:  stars,
+	}
 }
 
 func (sm Starmap) AddStar(s ...Star) {
@@ -91,32 +136,32 @@ func (sm Starmap) Rotate(deg float64) Starmap {
 	return sm
 }
 
-// Compresses several stars into appropriate bigger stars.
+// Compress several stars into appropriate bigger stars.
+// Find neighboring stars and add them together.
 func (sm Starmap) Compress() Starmap {
+	var clusters []Stars
+	var foundCluster bool
 
-	// Find neighboring stars and add them together.
-loop:
 	for i := range sm.Stars {
-		for j := range sm.Stars {
-			if i == j {
-				continue
-			}
+		foundCluster = false
 
-			if sm.Stars[i].IsNeighbor(sm.Stars[j]) {
-				if sm.Stars[i].GetOverlap(sm.Stars[j]) < 1 {
-					sm.Stars[i].Size++
-				}
-
-				// Delete j.
-				sm.Stars[j] = sm.Stars[len(sm.Stars)-1]
-				sm.Stars = sm.Stars[:len(sm.Stars)-1]
-				goto loop
+		for j := range clusters {
+			if !foundCluster && clusters[j].IsCloseTo(sm.Stars[i]) {
+				clusters[j] = append(clusters[j], sm.Stars[i])
+				foundCluster = true
 			}
+		}
+
+		if !foundCluster {
+			clusters = append(clusters, Stars{sm.Stars[i]})
 		}
 	}
 
-	// Remove stars under threshold.
-	// @todo
+	var starmap Starmap
+	starmap.Bounds = sm.Bounds
+	for i := range clusters {
+		starmap.Stars = append(starmap.Stars, clusters[i].Center())
+	}
 
-	return sm
+	return starmap
 }

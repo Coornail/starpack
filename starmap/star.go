@@ -41,7 +41,7 @@ func (s Star) GetOverlap(s2 Star) float64 {
 	}
 
 	// Partial overlap.
-	return (s.Size + s2.Size) / d
+	return (s.Size + s2.Size) - d
 }
 
 func (s Star) IsNeighbor(s2 Star) bool {

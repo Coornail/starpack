@@ -208,16 +208,17 @@ func GetStarmap(img image.Image) starmap.Starmap {
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			_, _, v := rgbaToColorful(img.At(x, y)).Hsv()
-			if v > 0.5 {
+			if v > 0.4 {
 				brightPoints = append(brightPoints, image.Point{X: x, Y: y})
 			}
 		}
 	}
 
-	sm := starmap.Starmap { Bounds: bounds }
-	for i:= range brightPoints {
-		sm.Stars = append(sm.Stars, starmap.Star{X: float64(brightPoints[i].X), Y: float64(brightPoints[i].Y), Size: 1 })
+	sm := starmap.Starmap{Bounds: bounds}
+	for i := range brightPoints {
+		sm.Stars = append(sm.Stars, starmap.Star{X: float64(brightPoints[i].X), Y: float64(brightPoints[i].Y), Size: 1, Removed: false})
 	}
 
-	return sm
+	fmt.Printf("Compressing...\n")
+	return sm.Compress()
 }
