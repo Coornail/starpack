@@ -1,7 +1,10 @@
 package starmap
 
 import (
+	"fmt"
 	"image"
+	"image/png"
+	"os"
 	"testing"
 )
 
@@ -94,4 +97,37 @@ func TestOffset(t *testing.T) {
 	if overlap != 1.0 {
 		t.Errorf("Star offset failed")
 	}
+}
+
+func TestVisualDifference(t *testing.T) {
+	sm := Starmap{
+		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 512, Y: 512}},
+		Stars: []Star{
+			{
+				X:    256,
+				Y:    256 - 10,
+				Size: 50.0,
+			},
+		},
+	}
+
+	sm2 := Starmap{
+		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 512, Y: 512}},
+		Stars: []Star{
+			{
+				X:    256,
+				Y:    256 + 10,
+				Size: 50.0,
+			},
+		},
+	}
+
+	maps := Starmaps{sm, sm2}
+	img := maps.VisualizeDifference()
+
+	fmt.Printf("%f\n", maps.Difference())
+	f, _ := os.Create("./difference.png")
+	defer f.Close()
+
+	png.Encode(f, img)
 }

@@ -102,11 +102,16 @@ func main() {
 		loadedImages = starpack.Upscale(loadedImages)
 	}
 
+	verboseOutput("Aligning\n")
+	loadedImages = starpack.StarTrack(loadedImages)
+
 	var colorMergeMethod starpack.ColorMerge = starpack.MedianColor
 	if mergeMethod == "average" {
 		colorMergeMethod = starpack.AverageColor
 	} else if mergeMethod == "brightest" {
 		colorMergeMethod = starpack.BrightestColor
+	} else if mergeMethod == "contrast" {
+		colorMergeMethod = starpack.ContrastColor
 	}
 
 	output := starpack.Starpack(loadedImages, colorMergeMethod)

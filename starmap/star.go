@@ -48,5 +48,7 @@ func (s Star) IsNeighbor(s2 Star) bool {
 	sCopy := s.Copy()
 	sCopy.Size++
 
+	// @todo bounding box check?
+
 	return sCopy.GetOverlap(s2) > 0
 }

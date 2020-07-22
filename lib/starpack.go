@@ -193,6 +193,43 @@ func Upscale(images []image.Image) []image.Image {
 	return images
 }
 
+func StarTrack(images []image.Image) []image.Image {
+	reference := images[0]
+	referenceMap := GetStarmap(reference)
+
+	for i := 1; i < len(images); i++ {
+		sMap := GetStarmap(images[i])
+		config := sMap.FindOffset(referenceMap)
+		fmt.Printf("%#v\n", config)
+		images[i] = Transform(images[i], config)
+	}
+
+	return images
+}
+
+func Transform(img image.Image, config starmap.OffsetConfig) image.Image {
+	img = Translate(img, config.X, config.Y)
+	if config.Rotation != 0 {
+		img = imaging.Rotate(img, config.Rotation, color.RGBA{R: 0, G: 0, B: 0, A: 0})
+	}
+
+	return img
+}
+
+func Translate(img image.Image, dx, dy int) *image.NRGBA64 {
+	bounds := img.Bounds()
+	output := image.NewNRGBA64(bounds)
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if x+dx < bounds.Max.X && y+dy < bounds.Max.Y {
+				output.Set(x+dx, y+dy, img.At(x, y))
+			}
+		}
+	}
+	return output
+}
+
 func SaveImage(fileName string, image image.Image) error {
 	f, _ := os.Create(fileName)
 	defer f.Close()
@@ -208,7 +245,8 @@ func GetStarmap(img image.Image) starmap.Starmap {
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			_, _, v := rgbaToColorful(img.At(x, y)).Hsv()
-			if v > 0.4 {
+			// @todo dynamic range
+			if v > 0.9 {
 				brightPoints = append(brightPoints, image.Point{X: x, Y: y})
 			}
 		}

@@ -40,6 +40,36 @@ func BrightestColor(colors []colorful.Color) colorful.Color {
 	return colors[brightestColor]
 }
 
+func ContrastColor(colors []colorful.Color) colorful.Color {
+	brightestValue := -1.0
+	brightestColor := 0
+
+	for i := range colors {
+		_, _, v := colors[i].Hsv()
+		if brightestValue < v {
+			brightestColor = i
+			brightestValue = v
+		}
+	}
+
+	// Find darkest color instead
+	if brightestValue < 0.2 {
+		darkestValue := 1.0
+		darkestColor := 0
+
+		for i := range colors {
+			_, _, v := colors[i].Hsv()
+			if darkestValue > v {
+				darkestColor = i
+				darkestValue = v
+			}
+		}
+		return colors[darkestColor]
+	}
+
+	return colors[brightestColor]
+}
+
 func MedianColor(colors []colorful.Color) colorful.Color {
 	c := len(colors)
 	if c == 1 {
