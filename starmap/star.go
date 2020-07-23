@@ -32,12 +32,9 @@ func (s Star) GetOverlap(s2 Star) float64 {
 
 	// Full overlap.
 	if d == 0 {
-		return 1.0
-	}
-
-	// No overlap.
-	if d > s.Size+s2.Size {
-		return 0.0
+		if s.Size == s2.Size {
+			return 1
+		}
 	}
 
 	// Partial overlap.

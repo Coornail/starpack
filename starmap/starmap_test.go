@@ -3,8 +3,6 @@ package starmap
 import (
 	"fmt"
 	"image"
-	"image/png"
-	"os"
 	"testing"
 )
 
@@ -28,7 +26,7 @@ func TestNoOverlap(t *testing.T) {
 	}
 
 	overlap := sm.GetOverlap(sm2)
-	if overlap != 0.0 {
+	if overlap > 0.0 {
 		t.Errorf("Star maps should not overlap")
 	}
 }
@@ -78,6 +76,35 @@ func TestPartialOverlap(t *testing.T) {
 	}
 }
 
+func TestInsideOverlap(t *testing.T) {
+	sm := Starmap{
+		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 1024, Y: 768}},
+		Stars: []Star{
+			{
+				X:    512,
+				Y:    368,
+				Size: 25.0,
+			},
+		},
+	}
+
+	sm2 := Starmap{
+		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 1024, Y: 768}},
+		Stars: []Star{
+			{
+				X:    512,
+				Y:    368,
+				Size: 12.0,
+			},
+		},
+	}
+
+	overlap := sm.GetOverlap(sm2)
+	if !(overlap > 0 && overlap < 1.0) {
+		t.Errorf("Stars should overlap")
+	}
+}
+
 func TestOffset(t *testing.T) {
 	sm1 := Starmap{
 		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 1024, Y: 768}},
@@ -99,35 +126,32 @@ func TestOffset(t *testing.T) {
 	}
 }
 
-func TestVisualDifference(t *testing.T) {
-	sm := Starmap{
-		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 512, Y: 512}},
-		Stars: []Star{
-			{
-				X:    256,
-				Y:    256 - 10,
-				Size: 50.0,
-			},
-		},
+func BenchmarkOverlap(b *testing.B) {
+	s1 := Star{
+		X:    512,
+		Y:    368,
+		Size: 25.0,
 	}
 
-	sm2 := Starmap{
-		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 512, Y: 512}},
-		Stars: []Star{
-			{
-				X:    256,
-				Y:    256 + 10,
-				Size: 50.0,
-			},
-		},
+	for n := 0; n <= b.N; n++ {
+		s2 := Star{
+			X:    512,
+			Y:    float64(368) + float64(n),
+			Size: 25.0,
+		}
+
+		s1.GetOverlap(s2)
 	}
 
-	maps := Starmaps{sm, sm2}
-	img := maps.VisualizeDifference()
+}
 
-	fmt.Printf("%f\n", maps.Difference())
-	f, _ := os.Create("./difference.png")
-	defer f.Close()
+func TestTest(t *testing.T) {
+	s1 := Star{X: 1505.5, Y: 1584.125, Size: 2.8284271247461903}
+	s2 := Star{X: 1504.142857142857, Y: 1581.857142857143, Size: 2.6457513110645907}
 
-	png.Encode(f, img)
+	s3 := s2.Offset(1, 3)
+
+	overlap := s1.GetOverlap(s3)
+	fmt.Printf("%#v\n", overlap)
+
 }

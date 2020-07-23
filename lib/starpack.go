@@ -9,6 +9,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 
 	"github.com/Coornail/starpack/starmap"
@@ -257,5 +258,20 @@ func GetStarmap(img image.Image) starmap.Starmap {
 		sm.Stars = append(sm.Stars, starmap.Star{X: float64(brightPoints[i].X), Y: float64(brightPoints[i].Y), Size: 1})
 	}
 
-	return sm.Compress()
+	sm = sm.Compress()
+
+	// Find 10 biggest stars.
+	sort.Slice(sm.Stars, func(i, j int) bool {
+		return sm.Stars[i].Size > sm.Stars[j].Size
+	})
+	sm.Stars = sm.Stars[0:min(10, len(sm.Stars))]
+
+	return sm
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

@@ -49,7 +49,7 @@ type Starmap struct {
 }
 
 func (sm Starmap) Copy() Starmap {
-	var stars []Star
+	stars := make([]Star, len(sm.Stars))
 	copy(stars, sm.Stars)
 
 	return Starmap{
@@ -108,12 +108,14 @@ func (sm Starmap) GetOverlap(sm2 Starmap) float64 {
 }
 
 func (sm Starmap) Offset(x, y float64) Starmap {
-	for i := range sm.Stars {
-		sm.Stars[i].X += x
-		sm.Stars[i].Y += y
+	output := sm.Copy()
+
+	for i := range output.Stars {
+		output.Stars[i].X += x
+		output.Stars[i].Y += y
 	}
 
-	return sm
+	return output
 }
 
 func (sm Starmap) Rotate(deg float64) Starmap {
@@ -163,7 +165,7 @@ func (sm Starmap) FindOffset(sm2 Starmap) OffsetConfig {
 		xMotion, yMotion = xMotion+dx, yMotion+dy
 	}
 
-	return OffsetConfig{X: bestX, Y: bestY}
+	return OffsetConfig{X: -bestX, Y: -bestY}
 
 }
 
