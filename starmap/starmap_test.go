@@ -2,7 +2,11 @@ package starmap
 
 import (
 	"image"
+	"image/png"
+	"os"
 	"testing"
+
+	"golang.org/x/exp/errors/fmt"
 )
 
 func TestNoOverlap(t *testing.T) {
@@ -170,4 +174,35 @@ func TestOffsetPartial(t *testing.T) {
 	if beforePixels >= afterPixels {
 		t.Errorf("Alignment should improve correct pixels")
 	}
+}
+
+func TestRotation(t *testing.T) {
+	s1 := Star{X: 10, Y: 10, Size: 3}
+	s2 := Star{X: 10, Y: 5, Size: 3}
+	s3 := Star{X: 5, Y: 5, Size: 3}
+
+	m1 := Starmap{
+		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 20, Y: 20}},
+		Stars:  Stars{s1, s2},
+	}
+
+	m2 := Starmap{
+		Bounds: image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: 20, Y: 20}},
+		Stars:  Stars{s1, s3},
+	}
+
+	offset := m1.FindOffset(m2)
+	fmt.Printf("%#v\n", offset)
+	m2 = m2.Rotate(offset.Rotation)
+
+	overlap := m1.GetOverlap(m2)
+	fmt.Printf("%#v\n", overlap)
+
+	f, _ := os.Create("m1.png")
+	defer f.Close()
+	png.Encode(f, m1.ToImage())
+
+	f2, _ := os.Create("m2.png")
+	defer f2.Close()
+	png.Encode(f2, m2.ToImage())
 }

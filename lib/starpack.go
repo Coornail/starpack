@@ -196,14 +196,22 @@ func Upscale(images []image.Image) []image.Image {
 
 func StarTrack(images []image.Image) []image.Image {
 	reference := images[0]
-	referenceMap := GetStarmap(reference)
+	referenceMap, treshold := GetStarmap(reference, 0)
+	fmt.Printf("Treshold: %f\n", treshold)
 
+	var wg sync.WaitGroup
 	for i := 1; i < len(images); i++ {
-		sMap := GetStarmap(images[i])
-		config := sMap.FindOffset(referenceMap)
-		fmt.Printf("%#v\n", config)
-		images[i] = Transform(images[i], config)
+		wg.Add(1)
+		go func(i int) {
+			sMap, _ := GetStarmap(images[i], treshold)
+			config, maxCorrect := sMap.FindOffset(referenceMap)
+			fmt.Printf("%#v (%d)\n", config, maxCorrect)
+			images[i] = Transform(images[i], config)
+			wg.Done()
+		}(i)
 	}
+
+	wg.Wait()
 
 	return images
 }
@@ -238,17 +246,29 @@ func SaveImage(fileName string, image image.Image) error {
 	return tiff.Encode(f, image, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 }
 
-func GetStarmap(img image.Image) starmap.Starmap {
+func GetStarmap(img image.Image, treshold float64) (starmap.Starmap, float64) {
 	// Filter for brightness.
 	bounds := img.Bounds()
 	var brightPoints []image.Point
 
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			_, _, v := rgbaToColorful(img.At(x, y)).Hsv()
-			// @todo dynamic range
-			if v > 0.9 {
-				brightPoints = append(brightPoints, image.Point{X: x, Y: y})
+	if treshold == 0 {
+		for treshold = 0.9; len(brightPoints) < 10 && treshold > 0.2; treshold -= 0.01 {
+			for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+				for x := bounds.Min.X; x < bounds.Max.X; x++ {
+					_, _, v := rgbaToColorful(img.At(x, y)).Hsv()
+					if v > treshold {
+						brightPoints = append(brightPoints, image.Point{X: x, Y: y})
+					}
+				}
+			}
+		}
+	} else {
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			for x := bounds.Min.X; x < bounds.Max.X; x++ {
+				_, _, v := rgbaToColorful(img.At(x, y)).Hsv()
+				if v > treshold {
+					brightPoints = append(brightPoints, image.Point{X: x, Y: y})
+				}
 			}
 		}
 	}
@@ -259,6 +279,7 @@ func GetStarmap(img image.Image) starmap.Starmap {
 	}
 
 	sm = sm.Compress()
+	fmt.Printf("Found %d stars (%f)\n", len(brightPoints), treshold)
 
 	// Find 10 biggest stars.
 	sort.Slice(sm.Stars, func(i, j int) bool {
@@ -266,7 +287,7 @@ func GetStarmap(img image.Image) starmap.Starmap {
 	})
 	sm.Stars = sm.Stars[0:min(10, len(sm.Stars))]
 
-	return sm
+	return sm, treshold
 }
 
 func min(a, b int) int {

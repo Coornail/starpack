@@ -138,23 +138,27 @@ func (sm Starmap) Rotate(deg float64) Starmap {
 	return sm
 }
 
-func (sm Starmap) FindOffset(sm2 Starmap) OffsetConfig {
-	max := 100
+func (sm Starmap) FindOffset(sm2 Starmap) (OffsetConfig, int) {
+	max := 1000
 	m2 := max * max
 
 	var xMotion, yMotion int
 	var dx, dy = 0, -1 // Direction.
 	var bestX, bestY int
+	var bestRotation int
 	maxCorrectPixels := -1.0
 
 	for i := 0; i < m2; i++ {
 		if (-max/2 < xMotion && xMotion <= max/2) && (-max/2 < yMotion && yMotion <= max/2) {
-			correctPixels := Starmaps{sm, sm2.Offset(float64(xMotion), float64(yMotion))}.CorrectPixels()
-			// fmt.Printf("X: %d\t Y: %d\t %f\n", xMotion, yMotion, correctPixels)
-			if maxCorrectPixels < correctPixels {
-				maxCorrectPixels = correctPixels
-				bestX = xMotion
-				bestY = yMotion
+			for rotation := -10; rotation <= 10; rotation += 1 {
+				correctPixels := Starmaps{sm, sm2.Offset(float64(xMotion), float64(yMotion)).Rotate(float64(rotation))}.CorrectPixels()
+				// fmt.Printf("X: %d\t Y: %d\t Rotation: %d\t %f\n", xMotion, yMotion, rotation, correctPixels)
+				if maxCorrectPixels < correctPixels {
+					maxCorrectPixels = correctPixels
+					bestX = xMotion
+					bestY = yMotion
+					bestRotation = rotation
+				}
 			}
 		}
 
@@ -165,7 +169,7 @@ func (sm Starmap) FindOffset(sm2 Starmap) OffsetConfig {
 		xMotion, yMotion = xMotion+dx, yMotion+dy
 	}
 
-	return OffsetConfig{X: bestX, Y: bestY}
+	return OffsetConfig{X: bestX, Y: bestY, Rotation: float64(bestRotation)}, maxCorrectPixels
 
 }
 
