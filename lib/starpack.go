@@ -205,7 +205,7 @@ func StarTrack(images []image.Image) []image.Image {
 		go func(i int) {
 			sMap, _ := GetStarmap(images[i], treshold)
 			config, maxCorrect := sMap.FindOffset(referenceMap)
-			fmt.Printf("%#v (%d)\n", config, maxCorrect)
+			fmt.Printf("%#v (%f)\n", config, maxCorrect)
 			images[i] = Transform(images[i], config)
 			wg.Done()
 		}(i)
@@ -252,7 +252,7 @@ func GetStarmap(img image.Image, treshold float64) (starmap.Starmap, float64) {
 	var brightPoints []image.Point
 
 	if treshold == 0 {
-		for treshold = 0.9; len(brightPoints) < 10 && treshold > 0.2; treshold -= 0.01 {
+		for treshold = 1.0; len(brightPoints) < 10 && treshold > 0.2; treshold -= 0.005 {
 			for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 				for x := bounds.Min.X; x < bounds.Max.X; x++ {
 					_, _, v := rgbaToColorful(img.At(x, y)).Hsv()

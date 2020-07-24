@@ -138,7 +138,7 @@ func (sm Starmap) Rotate(deg float64) Starmap {
 	return sm
 }
 
-func (sm Starmap) FindOffset(sm2 Starmap) (OffsetConfig, int) {
+func (sm Starmap) FindOffset(sm2 Starmap) (OffsetConfig, float64) {
 	max := 1000
 	m2 := max * max
 
@@ -241,15 +241,6 @@ func (sms Starmaps) VisualizeDifference() *image.NRGBA64 {
 }
 
 func (sms Starmaps) CorrectPixels() float64 {
-	/*
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			for x := bounds.Min.X; x < bounds.Max.X; x++ {
-				if sms.IsOverlap(x, y) {
-					correctPixels++
-				}
-			}
-		}
-	*/
 	ref := sms[0]
 	target := sms[1]
 	highestOverlap := 0.0

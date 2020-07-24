@@ -19,6 +19,7 @@ var (
 	whiteBalance         bool
 	denoise              bool
 	removeLightPollution bool
+	align                bool
 	mergeMethod          string
 	outputFile           string
 )
@@ -31,6 +32,7 @@ func verboseOutput(format string, args ...interface{}) {
 
 func main() {
 	flag.BoolVar(&supersample, "supersample", false, "Supersample image")
+	flag.BoolVar(&align, "align", false, "Align stars")
 	flag.BoolVar(&verbose, "verbose", true, "Verbose output")
 	flag.BoolVar(&whiteBalance, "whiteBalance", false, "White balancing") // @probabaly not worth it
 	flag.BoolVar(&denoise, "denoise", false, "Denoise input images")
@@ -102,8 +104,10 @@ func main() {
 		loadedImages = starpack.Upscale(loadedImages)
 	}
 
-	verboseOutput("Aligning\n")
-	loadedImages = starpack.StarTrack(loadedImages)
+	if align {
+		verboseOutput("Aligning\n")
+		loadedImages = starpack.StarTrack(loadedImages)
+	}
 
 	var colorMergeMethod starpack.ColorMerge = starpack.MedianColor
 	if mergeMethod == "average" {
