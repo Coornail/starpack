@@ -165,7 +165,7 @@ func (sm Starmap) FindOffset(sm2 Starmap) OffsetConfig {
 		xMotion, yMotion = xMotion+dx, yMotion+dy
 	}
 
-	return OffsetConfig{X: -bestX, Y: -bestY}
+	return OffsetConfig{X: bestX, Y: bestY}
 
 }
 
