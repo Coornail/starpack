@@ -9,7 +9,7 @@ import (
 
 // ModifiedGrayWorld algorithm for white balance.
 // Based on https://ieeexplore.ieee.org/document/6269338/
-func ModifiedGrayWorld(img image.Image) *image.NRGBA64 {
+func ModifiedGrayWorld(img image.Image) *image.RGBA64 {
 	var rAvg, gAvg, bAvg float64
 	var aAvg float64
 
@@ -38,7 +38,7 @@ func ModifiedGrayWorld(img image.Image) *image.NRGBA64 {
 	gScale := aAvg - gAvg
 	bScale := aAvg - bAvg
 
-	res := image.NewNRGBA64(bounds)
+	res := image.NewRGBA64(bounds)
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			c = img.At(x, y)

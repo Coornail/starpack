@@ -23,9 +23,9 @@ const (
 	delta = 0.1
 )
 
-func Starpack(images []image.Image, colorMergeMethod ColorMerge) *image.NRGBA64 {
+func Starpack(images []image.Image, colorMergeMethod ColorMerge) *image.RGBA64 {
 	bounds := images[0].Bounds()
-	output := image.NewNRGBA64(bounds)
+	output := image.NewRGBA64(bounds)
 
 	var currentColor []colorful.Color
 	var wg sync.WaitGroup
@@ -46,7 +46,8 @@ func Starpack(images []image.Image, colorMergeMethod ColorMerge) *image.NRGBA64 
 
 					currentColor[i] = rgbaToColorful(images[i].At(currX, currY))
 				}
-				output.Set(x, y, colorMergeMethod(currentColor))
+				r, g, b, a := colorMergeMethod(currentColor).RGBA()
+				output.SetRGBA64(x, y, color.RGBA64{R: uint16(r), G: uint16(g), B: uint16(b), A: uint16(a)})
 			}(x, y, currentColor)
 		}
 		wg.Wait()
