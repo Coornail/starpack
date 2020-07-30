@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	starpack "github.com/coornail/starpack/lib"
+	starpack "github.com/Coornail/starpack/lib"
 )
 
 func main() {
