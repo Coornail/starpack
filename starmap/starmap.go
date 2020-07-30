@@ -150,7 +150,7 @@ func (sm Starmap) FindOffset(sm2 Starmap) (OffsetConfig, float64) {
 
 	for i := 0; i < m2; i++ {
 		if (-max/2 < xMotion && xMotion <= max/2) && (-max/2 < yMotion && yMotion <= max/2) {
-			for rotation := -10; rotation <= 10; rotation += 1 {
+			for rotation := -10; rotation <= 10; rotation++ {
 				correctPixels := Starmaps{sm, sm2.Offset(float64(xMotion), float64(yMotion)).Rotate(float64(rotation))}.CorrectPixels()
 				// fmt.Printf("X: %d\t Y: %d\t Rotation: %d\t %f\n", xMotion, yMotion, rotation, correctPixels)
 				if maxCorrectPixels < correctPixels {
