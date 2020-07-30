@@ -34,7 +34,7 @@ jobs:
       run: go build -v ./cmd/starpack 
     
     - name: Go vet
-      run: go vet
+      run: go vet ./...
 
     - name: Test
-      run: go test -v .
+      run: go test -v ./...
