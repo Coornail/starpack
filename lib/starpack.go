@@ -218,10 +218,10 @@ func StarTrack(images []image.Image) []image.Image {
 }
 
 func Transform(img image.Image, config starmap.OffsetConfig) image.Image {
-	img = Translate(img, config.X, config.Y)
 	if config.Rotation != 0 {
 		img = imaging.Rotate(img, config.Rotation, color.RGBA{R: 0, G: 0, B: 0, A: 0})
 	}
+	img = Translate(img, config.X, config.Y)
 
 	return img
 }
@@ -247,16 +247,21 @@ func SaveImage(fileName string, image image.Image) error {
 	return tiff.Encode(f, image, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 }
 
+func brightness(col color.Color) float64 {
+	c := rgbaToColorful(col)
+	return float64(c.R)*0.299 + float64(c.G)*0.587 + float64(c.B)*0.114
+}
+
 func GetStarmap(img image.Image, treshold float64) (starmap.Starmap, float64) {
 	// Filter for brightness.
 	bounds := img.Bounds()
 	var brightPoints []image.Point
 
 	if treshold == 0 {
-		for treshold = 1.0; len(brightPoints) < 10 && treshold > 0.2; treshold -= 0.005 {
+		for treshold = 1.0; len(brightPoints) < 10 && treshold > 0.2; treshold -= 0.01 {
 			for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 				for x := bounds.Min.X; x < bounds.Max.X; x++ {
-					_, _, v := rgbaToColorful(img.At(x, y)).Hsv()
+					v := brightness(img.At(x, y))
 					if v > treshold {
 						brightPoints = append(brightPoints, image.Point{X: x, Y: y})
 					}
@@ -266,7 +271,7 @@ func GetStarmap(img image.Image, treshold float64) (starmap.Starmap, float64) {
 	} else {
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 			for x := bounds.Min.X; x < bounds.Max.X; x++ {
-				_, _, v := rgbaToColorful(img.At(x, y)).Hsv()
+				v := brightness(img.At(x, y))
 				if v > treshold {
 					brightPoints = append(brightPoints, image.Point{X: x, Y: y})
 				}

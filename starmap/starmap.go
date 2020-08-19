@@ -39,7 +39,7 @@ func (stars Stars) Center() Star {
 	return Star{
 		X:    centerX,
 		Y:    centerY,
-		Size: math.Sqrt(starLength),
+		Size: starLength,
 	}
 }
 
@@ -139,7 +139,7 @@ func (sm Starmap) Rotate(deg float64) Starmap {
 }
 
 func (sm Starmap) FindOffset(sm2 Starmap) (OffsetConfig, float64) {
-	max := 1000
+	max := 64
 	m2 := max * max
 
 	var xMotion, yMotion int
@@ -150,7 +150,7 @@ func (sm Starmap) FindOffset(sm2 Starmap) (OffsetConfig, float64) {
 
 	for i := 0; i < m2; i++ {
 		if (-max/2 < xMotion && xMotion <= max/2) && (-max/2 < yMotion && yMotion <= max/2) {
-			for rotation := -10; rotation <= 10; rotation++ {
+			for rotation := -45; rotation <= 45; rotation++ {
 				correctPixels := Starmaps{sm, sm2.Offset(float64(xMotion), float64(yMotion)).Rotate(float64(rotation))}.CorrectPixels()
 				// fmt.Printf("X: %d\t Y: %d\t Rotation: %d\t %f\n", xMotion, yMotion, rotation, correctPixels)
 				if maxCorrectPixels < correctPixels {
@@ -243,16 +243,36 @@ func (sms Starmaps) VisualizeDifference() *image.NRGBA64 {
 func (sms Starmaps) CorrectPixels() float64 {
 	ref := sms[0]
 	target := sms[1]
-	highestOverlap := 0.0
+
+	var highestOverlap float64
+	var sumOverlap float64
 
 	for i := range ref.Stars {
+		highestOverlap = 0.0
 		for j := range target.Stars {
 			overlap := ref.Stars[i].GetOverlap(target.Stars[j])
 			if overlap > highestOverlap {
 				highestOverlap = overlap
 			}
 		}
+
+		sumOverlap += highestOverlap
 	}
 
-	return highestOverlap
+	return sumOverlap
+}
+
+func (sms Starmaps) CorrectPixelsSlow() float64 {
+	bounds := sms[0].Bounds
+
+	correctPixels := 0
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if sms[0].IntersectWithStar(float64(x), float64(y)) && sms[1].IntersectWithStar(float64(x), float64(y)) {
+				correctPixels++
+			}
+		}
+	}
+
+	return float64(correctPixels)
 }

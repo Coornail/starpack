@@ -165,14 +165,26 @@ func TestOffsetPartial(t *testing.T) {
 	sm := Starmaps{m1, m2}
 
 	beforePixels := sm.CorrectPixels()
-	offset := m1.FindOffset(m2)
+	offset, _ := m1.FindOffset(m2)
+	fmt.Printf("%#v\n", offset)
 
+	diff := Starmaps{m1, m2}.VisualizeDifference()
+	f1, _ := os.Create("./before.png")
+	defer f1.Close()
+	png.Encode(f1, diff)
+
+	m2 = m2.Rotate(offset.Rotation)
 	m2 = m2.Offset(float64(offset.X), float64(offset.Y))
 	sm = Starmaps{m1, m2}
 	afterPixels := sm.CorrectPixels()
 
+	diff = Starmaps{m1, m2}.VisualizeDifference()
+	f2, _ := os.Create("./after.png")
+	defer f2.Close()
+	png.Encode(f2, diff)
+
 	if beforePixels >= afterPixels {
-		t.Errorf("Alignment should improve correct pixels")
+		t.Errorf("Alignment should improve correct pixels: %f -> %f\n", beforePixels, afterPixels)
 	}
 }
 
@@ -191,18 +203,15 @@ func TestRotation(t *testing.T) {
 		Stars:  Stars{s1, s3},
 	}
 
-	offset := m1.FindOffset(m2)
-	fmt.Printf("%#v\n", offset)
+	sm := Starmaps{m1, m2}
+	beforePixels := sm.CorrectPixels()
+
+	offset, _ := m1.FindOffset(m2)
 	m2 = m2.Rotate(offset.Rotation)
+	m2 = m2.Offset(float64(offset.X), float64(offset.Y))
 
-	overlap := m1.GetOverlap(m2)
-	fmt.Printf("%#v\n", overlap)
-
-	f, _ := os.Create("m1.png")
-	defer f.Close()
-	png.Encode(f, m1.ToImage())
-
-	f2, _ := os.Create("m2.png")
-	defer f2.Close()
-	png.Encode(f2, m2.ToImage())
+	afterPixels := sm.CorrectPixels()
+	if beforePixels >= afterPixels {
+		t.Errorf("Alignment should improve correct pixels: %f -> %f\n", beforePixels, afterPixels)
+	}
 }
