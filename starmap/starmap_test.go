@@ -173,8 +173,8 @@ func TestOffsetPartial(t *testing.T) {
 	defer f1.Close()
 	png.Encode(f1, diff)
 
-	m2 = m2.Rotate(offset.Rotation)
 	m2 = m2.Offset(float64(offset.X), float64(offset.Y))
+	m2 = m2.Rotate(offset.Rotation)
 	sm = Starmaps{m1, m2}
 	afterPixels := sm.CorrectPixels()
 
@@ -207,9 +207,10 @@ func TestRotation(t *testing.T) {
 	beforePixels := sm.CorrectPixels()
 
 	offset, _ := m1.FindOffset(m2)
-	m2 = m2.Rotate(offset.Rotation)
 	m2 = m2.Offset(float64(offset.X), float64(offset.Y))
+	m2 = m2.Rotate(offset.Rotation)
 
+	sm = Starmaps{m1, m2}
 	afterPixels := sm.CorrectPixels()
 	if beforePixels >= afterPixels {
 		t.Errorf("Alignment should improve correct pixels: %f -> %f\n", beforePixels, afterPixels)

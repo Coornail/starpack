@@ -291,7 +291,7 @@ func GetStarmap(img image.Image, treshold float64) (starmap.Starmap, float64) {
 	sort.Slice(sm.Stars, func(i, j int) bool {
 		return sm.Stars[i].Size > sm.Stars[j].Size
 	})
-	sm.Stars = sm.Stars[0:min(10, len(sm.Stars))]
+	sm.Stars = sm.Stars[0:min(100, len(sm.Stars))]
 
 	return sm, treshold
 }
